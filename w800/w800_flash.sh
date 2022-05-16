@@ -1,3 +1,5 @@
 #! /bin/bash
 
-./wm_tool -c /dev/ttyUSB0 -dl ./beanio_w800_2v05.fls -rs rts
+gcc ./wm_tool.c -lpthread -o ./wm_tool
+
+./wm_tool -c /dev/ttyUSB0 -dl ./beanio_w800.fls -rs rts
