@@ -30,6 +30,7 @@ class WMDownload(object):
         self.ser = serial.Serial(port, baud, timeout=timeout)
         statinfo_bin = os.stat(image)
         self.bar_user = pyprind.ProgBar(statinfo_bin.st_size/1024+2)
+        # self.ser.close()
 
     def image_path(self):
         return self.image
@@ -50,9 +51,34 @@ class WMDownload(object):
         self.bar_user.update()
         return self.ser.write(data)
 
+    def _setDTR(self,state):
+        self.ser.setDTR(state)
+    
+    def _setRTS(self,state):
+        self.ser.setRTS(state)
+        self.ser.setDTR(self.ser.dtr)
+
+    def bootloader_enter(self):
+        self._setDTR(False)  # IO0=HIGH
+        self._setRTS(True)   # EN=LOW, chip in reset
+        time.sleep(0.1)
+        self._setDTR(True)   # IO0=LOW
+        self._setRTS(False)  # EN=HIGH, chip out of reset
+        time.sleep(0.2)
+        self._setDTR(False)  # IO0=HIGH, done
+
+    def bootloader_exit(self):
+        self._setDTR(True)  # IO0=LOW
+        self._setRTS(True)   # EN=LOW, chip in reset
+        time.sleep(0.1)
+        self._setDTR(False)   # IO0=HIGH
+        self._setRTS(False)  # EN=HIGH, chip out of reset
+        time.sleep(0.2)
+        self._setDTR(True)  # IO0=LOW, done
+
     def open(self):
         self.ser.open()
-    
+        
     def close(self):
         self.ser.flush()
         self.ser.flushInput()
@@ -98,35 +124,38 @@ def main(argv):
     print("serial open success！com: %s, baudrate: %s;" % download.info())
     print('please restart device!')
     download.set_timeout(0.1)
+    download.bootloader_enter()
     while True:
         c = download.getc(1)
         if c == b'C':
-            download.putc(bytes.fromhex('210a00ef2a3100000080841e00'))
+            # download.putc(bytes.fromhex('210a00ef2a3100000080841e00'))
             break
         else:
             download.putc(struct.pack('<B', 27))
-    download.close()
-    time.sleep(0.2)
-    download.set_port_baudrate(2000000)
-    download.open()
-    time.sleep(0.2)
+    
+    # download.close()
+    # time.sleep(0.2)
+    # download.set_port_baudrate(2000000)
+    # download.open()
+    # time.sleep(0.2)
 
-    # check baudrate
-    while True:
-        c = download.getc(1)
-        if c == b'C':
-            print('serial into high speed mode')
-            break
-        else:
-            download.close()
-            download.set_port_baudrate(115200)
-            download.open()
-            time.sleep(0.2)
-            download.putc(bytes.fromhex('210a00ef2a3100000080841e00'))
-            download.close()
-            download.set_port_baudrate(2000000)
-            download.open()
-            time.sleep(0.2)
+    # # check baudrate
+    # while True:
+    #     c = download.getc(1)
+    #     if c == b'C':
+    #         print('serial into high speed mode')
+    #         break
+    #     else:
+    #         print(c)
+    #         download.close()
+    #         download.set_port_baudrate(115200)
+    #         download.open()
+    #         time.sleep(0.2)
+    #         download.putc(bytes.fromhex('210a00ef2a3100000080841e00'))
+    #         download.close()
+    #         download.set_port_baudrate(2000000)
+    #         download.open()
+    #         time.sleep(0.2)
 
     print("start download %s "  % download.image_path())
     try:
@@ -147,6 +176,7 @@ def main(argv):
             print("download %s image success!" % download.image_path())
         else:
             print("download %s image fail!" % download.image_path())
+        download.bootloader_exit()
         download.close()
 
 if __name__ == '__main__':
