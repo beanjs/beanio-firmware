@@ -1,3 +1,3 @@
 #! /bin/bash
 
-python3 ./download.py ttyUSB0 ./beanio_w601.fls
+python3 ./download.py /dev/ttyUSB0 ./beanio_w601.fls

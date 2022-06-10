@@ -93,7 +93,7 @@ def help():
     print('    COM default：\"COM1\" image default：\"../Bin/WM_W600_GZ.img\"')
     print('    eg：python download.py COM5 ../Bin/WM_W600_GZ.img')
     print('Linux:python3 download.py [COM] [image]')
-    print('    COM default：\"ttyUSB0\" image default：\"../Bin/WM_W600_GZ.img\"')
+    print('    COM default：\"/dev/ttyUSB0\" image default：\"../Bin/WM_W600_GZ.img\"')
     print('    eg：python3 download.py ttyUSB0 ../Bin/WM_W600_GZ.img')
 
 def main(argv):
@@ -108,13 +108,13 @@ def main(argv):
             if platform.system() == 'Windows':
                 user_port = argv[1]
             else:
-                user_port = "/dev/" + argv[1]
+                user_port = argv[1]
             download = WMDownload(port=user_port)
     elif argc == 3:
         if platform.system() == 'Windows':
             user_port = argv[1]
         else:
-            user_port = "/dev/" + argv[1]
+            user_port = argv[1]
         download = WMDownload(port=user_port, image=argv[2])
     else:
         help()
